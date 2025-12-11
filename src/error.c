@@ -35,3 +35,8 @@ void raiseFileOpenError(const char* filename) {
     fprintf(stderr, "Error: ファイル '%s' を開くことができませんでした\n", filename);
     exit(EXIT_FAILURE);
 }
+
+void raiseStateOverflowError(int pin) {
+    fprintf(stderr, "Error: ピン %d の状態数が上限に達しました\n", pin);
+    exit(EXIT_FAILURE);
+}

@@ -8,7 +8,10 @@ void  analogWrite(int pin, int value);
 float analogRead(int pin);
 
 /* 時間制御 */
-float millis();
+unsigned long millis();
+unsigned long micros();
+
+
 void  delay(int ms);
 void  delayMicroseconds(int us);
 

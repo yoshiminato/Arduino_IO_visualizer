@@ -18,30 +18,28 @@ void analogWrite(int pin, int value) {
 int digitalRead(int pin) {
     double value = getPinState(pin);
     return (int)value;
-    // return 0; // デフォルト値
 }
 
 
 float analogRead(int pin) {
-    /* 仮実装 */
     return 0.0f; // デフォルト値
 }
 
-float millis() {
-    // 仮実装: 常に0を返す
-    return 0.0f;
+unsigned long millis() {
+    long long current_time_us = getSimulationTimeus();
+    return (unsigned long)(current_time_us / 1000);
+}
+
+unsigned long micros() {
+    return (unsigned long)getSimulationTimeus();
 }
 
 void delay(int ms) {
-    // シミュレーション時間と出力ピン状態の更新を行う
     int dt = 1000 * ms; // マイクロ秒に変換
-    updateSimulationTime(dt);
-    updateDurationForOutputPins(dt);
+    myDelay(dt);
 }
 
 void delayMicroseconds(int us) {
-    // シミュレーション時間と出力ピン状態の更新を行う
-    updateSimulationTime(us);
-    updateDurationForOutputPins(us);
+    myDelay(us);
 }
 

@@ -3,16 +3,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 // グローバル変数の実体定義
 PinState pin_states[MAX_PIN_NUM];
 int end_sim_flag;
 int pin_count;
-int current_time_ms;
+long long simulation_start_time_us;
+long long end_simulation_time_us;
+
+
+/* 現在の時刻をマイクロ秒単位で取得する関数 */
+long long getCurrentTimeus(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (long long)tv.tv_sec * 1000000LL + tv.tv_usec;
+}
+
+long long getSimulationTimeus(void) {
+    long long current_time_us = getCurrentTimeus();
+    return current_time_us - simulation_start_time_us;
+}
 
 /* シミュレーション時間を初期化する関数 */
-void initTimems(void) {
-    current_time_ms = 0;
+void initTimeus(void) {
+    simulation_start_time_us = getCurrentTimeus();
 }   
 
 /* シミュレーション終了フラグを初期化する関数 */
@@ -26,7 +42,7 @@ void initPinStates(void) {
     for (int i = 0; i < MAX_PIN_NUM; i++) {
         pin_states[i].number = -1; /* 未使用ピン */
         pin_states[i].mode = -1;   /* 未設定モード */
-        pin_states[i].state_count = -1;
+        pin_states[i].state_count = 0;
         for (int j = 0; j < MAX_STATE_NUM; j++) {
             pin_states[i].log[j].value = 0.0;
             pin_states[i].log[j].duration = 0;
@@ -36,48 +52,63 @@ void initPinStates(void) {
 
 void init() {
     initPinStates();
-    initTimems();
+    initTimeus();
     initFlag();
 }
 
-void updateSimulationTime(int ms) {
-    current_time_ms += ms;
-}
-
-int getSimulationTime(void) {
-    return current_time_ms;
+void myDelay(int us) {
+    usleep(us);
 }
 
 void loadInputPinsStateFromFile(const char* filename) {
+
+    // ファイルパスの構築
     char* filepath = malloc(strlen(PARAM_DIR) + strlen(filename) + 1);
     strcpy(filepath, PARAM_DIR);
     strcat(filepath, filename);
-    printf("Loading input pin states from file: %s\n", filepath);
+
+    // ファイルが存在しなければエラーを発生
     FILE* file = fopen(filepath, "r");
-    char line[LINE_BUFFER_SIZE];
-    int line_count = 0;
     if (file == NULL) raiseFileOpenError(filename);
+
+    // 入力ファイル読み込みのためのバッファ
+    char line[LINE_BUFFER_SIZE]; 
+
+    // 1行ずつ入力ファイルを読み込む
     while (fgets(line, sizeof(line), file) != NULL) {
+
         int pin;
         float value;
-        int duration;
+        long long duration;
+
+        // 数値(ピン番号)が読み取れなければ異常終了
         if (sscanf(line, "%d", &pin) != 1) raiseLoadInputFileError(filename);
+        
+        // 無効なピン番号、モードの場合のガード節
         int idx = getIndexOfPin(pin);
         if (idx == -1) raiseNoPinError(pin);
         PinState* state = &pin_states[idx];
         if (state->mode != INPUT) raiseInvalidFuncError(pin, state->mode);
-        char c;
-        int global_idx = 0;
-        int local_idx = 0;
-        char buf[PARAM_BUFFER_SIZE];
-        int space_count = 0;
+
+        int global_idx = 0;           // グローバルインデックス(行の中で何文字目か)
+        int local_idx = 0;            // ローカルインデックス(解析中の単語の文字数)
+        char buf[PARAM_BUFFER_SIZE];  // 解析中の単語バッファ
+        int space_count = 0;          // スペース区切りの単語数
+        
+        // 行を1文字づつ解析
         while (global_idx < sizeof(line)) {
+
+            // 現在の文字を取得
             char ch = line[global_idx];
-            // puts("-----");
-            // printf("ch: '%c' (global_idx=%d, local_idx=%d)\n", ch, global_idx, local_idx);
+
+            // スペース、改行、終端文字の場合(データが途切れた場合)の処理
             if(ch == ' ' || ch == '\n' || ch == '\0') {
+                
+
                 global_idx++;
                 if(local_idx == 0) continue;
+
+                // 1つ目のデータは読み飛ばす(既にループ前にsscanfで読み取り済み)
                 if(space_count == 0){
                     int tmp;
                     local_idx=0; // ピン番号はsscanfで読み取り済みなので読み飛ばし
@@ -91,7 +122,7 @@ void loadInputPinsStateFromFile(const char* filename) {
                     space_count++;
                 }
                 else {
-                    sscanf(buf, "%d", &duration);
+                    sscanf(buf, "%lld", &duration);
                     int sc = ++state->state_count;
 
                     if (sc >= MAX_STATE_NUM) break;
@@ -115,15 +146,13 @@ void loadInputPinsStateFromFile(const char* filename) {
 
 void registerPin(int pin, int mode) {
 
-    // printf("=================================\n");
-    // printf("registerPin: pin=%d, mode=%d\n", pin, mode);
-
+    // 無効なピン番号、モード指定の場合のガード節
     if(pin <= AVAILABLE_PIN_NUMBER_MIN || pin >= AVAILABLE_PIN_NUMBER_MAX) 
         raiseInvalidPinNumberError(pin);
-
     if(mode != INPUT && mode != OUTPUT) 
         raiseInvalidModeError(pin, mode);
 
+    // ピン状態配列に新しいピンを登録
     PinState* state = &pin_states[pin_count];
     state->number = pin;
     state->mode = mode;
@@ -132,78 +161,95 @@ void registerPin(int pin, int mode) {
     return;
 }
 
-void updateDurationForOutputPins(int ms) {
-    for (int i = 0; i < pin_count; i++) { 
-        int mode = pin_states[i].mode;
-        if (mode != OUTPUT) continue;
-        PinState* state = &pin_states[i];
-        int sc = state->state_count;
-        
-        // 状態が1つ以上ある場合のみ更新
-        if (sc < 0) continue;
-        
-        // 配列範囲外アクセスを防ぐ
-        if (sc >= MAX_STATE_NUM) {
-            end_sim_flag = 1;
-            continue;
-        }
-
-        // 最後に追加された状態（現在の状態）を更新
-        State* current_state = &state->log[sc];
-        current_state->duration += ms;
-
-        // printf("afterUpdate - value=%.1f, duration=%d\n", current_state->value, current_state->duration);
-    }
-    return;
-}
-
 void updatePinState(int pin, double value) {
     
+    // 存在しないピンが指定された場合のガード節
     int idx = getIndexOfPin(pin);
     if (idx == -1) raiseNoPinError(pin);
+
     PinState* state = &pin_states[idx];
+
+    // 出力ピンであることを確認
+    int mode = state->mode;
+    if (mode != OUTPUT) raiseInvalidFuncError(pin, mode);
+
+    // 今の状態と同じなら状態更新しない
+    double current_value = state->log[state->state_count].value;
+    if(current_value == value) return;
 
     int sc = ++state->state_count;
 
     // 管理可能な状態数に達したらシミュレーション終了
-    if (sc >= MAX_STATE_NUM) {
-        end_sim_flag = 1;
-        return;  // 配列範囲外アクセスを防ぐため、ここで終了
+    if (sc >= MAX_STATE_NUM) 
+        raiseStateOverflowError(pin);
+
+    // 前の状態の終了時刻(遷移してきた全状態の経過時間の総和)を計算
+    long long last_state_start_time_us = 0;
+    for (int i = 0; i < sc; i++)
+        last_state_start_time_us += state->log[i].duration;
+
+    if(sc > 0){
+        // 時刻を取得し前状態の経過時間を算出 & 記録
+        int prev_sc = sc - 1;
+        long long current_simulation_time_us = getSimulationTimeus();
+        state->log[prev_sc].duration = current_simulation_time_us - last_state_start_time_us;
     }
 
-    int mode = state->mode;
-    if (mode != OUTPUT) raiseInvalidFuncError(pin, mode);
-
+    // 状態を更新
     state->log[sc].value = value;
-    
+
     return;
 }
 
-
 int getIndexOfPin(int pin) {
-    // printf("getIndexOfPin: pin=%d\n", pin);
-    for (int i = 0; i < pin_count; i++) {
-        // printf("  checking pin_states[%d].number=%d\n", i, pin_states[i].number);
-        if (pin_states[i].number == pin) {
+    for (int i = 0; i < pin_count; i++)
+        if (pin_states[i].number == pin)
             return i;
-        }
-    }
+            
     return -1; // ピンが見つからない場合
 }
 
 double getPinState(int pin) {
+
+    // 存在しないピンが指定された場合のガード節
     int idx = getIndexOfPin(pin);
     if (idx == -1) raiseNoPinError(pin);
-    int current_time_ms = getSimulationTime();
-    int time_sum = 0;
+
+    // 現シミュレーション時間を取得
+    long long current_simulation_time_us = getSimulationTimeus();
+
+    // 入力ピンの状態配列から現在の状態を取得
+    int timeus_sum = 0;
     PinState* state = &pin_states[idx];
     for(int sc=0; sc <= state->state_count; sc++) {
-        if(current_time_ms > time_sum + state->log[sc].duration) {
-            time_sum += state->log[sc].duration;
+        if(current_simulation_time_us > timeus_sum + state->log[sc].duration) {
+            timeus_sum += state->log[sc].duration;
             continue;
         }
         return state->log[sc].value;
     }
-    return LOW; // デフォルト値
+
+    // 入力ピンの状態が定義されていない場合はLOWを返す
+    return LOW;
+}
+
+void cleanupSimulation(void) {
+    for(int i=0; i < pin_count; i++) {
+        PinState* state = &pin_states[i];
+        int pin = state->number;
+        int sc = state->state_count;
+
+        int mode = state->mode;
+        if (mode != OUTPUT) continue;
+
+        // 前の状態の終了時刻(遷移してきた全状態の経過時間の総和)を計算
+        long long prev_state_start_time_us = 0;
+        for (int j = 0; j < sc; j++)
+            prev_state_start_time_us += state->log[j].duration;
+
+        long long rest_time_us = end_simulation_time_us - prev_state_start_time_us;
+        state->log[sc].duration = rest_time_us;
+    }
+    return;
 }
 

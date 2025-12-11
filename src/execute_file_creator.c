@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 int main(void) {
-    const char *filename = "./data/42竹内良輔/課題2_1_2425050428.docx";
+    const char *filename = "./data/test/test1.docx";
     char cmd[256];
     snprintf(cmd, sizeof(cmd), "python3 ./scripts/convert_docx2txt.py --input \"%s\"", filename);
 
@@ -17,34 +17,49 @@ int main(void) {
     fprintf(execute_src_file, "#include \"pin_state.h\"\n");
     fprintf(execute_src_file, "#include \"error.h\"\n");
     fprintf(execute_src_file, "#include <stdio.h>\n");
+    fprintf(execute_src_file, "#include <stdlib.h>\n");
+    fprintf(execute_src_file, "#include <math.h>\n");
+
 
     fprintf(execute_src_file, "\n");
+
     fprintf(execute_src_file, "double scale = 1.0 / 100000;\n");
     fprintf(execute_src_file, "void setup();\n");
     fprintf(execute_src_file, "void loop();\n");
     fprintf(execute_src_file, "\n");    
+
     fprintf(execute_src_file, "int main(int argc, char *argv[]) {\n");
-    
+    fprintf(execute_src_file, "    end_simulation_time_us = 10 * pow(10, 6);\n");
     fprintf(execute_src_file, "    init();\n");
     fprintf(execute_src_file, "    setup();\n");
     fprintf(execute_src_file, "    if (argc > 1)\n");
     fprintf(execute_src_file, "        loadInputPinsStateFromFile(argv[1]);\n");
-    fprintf(execute_src_file, "    while(!end_sim_flag) {\n");
+    fprintf(execute_src_file, "    if (argc == 3)\n");
+    fprintf(execute_src_file, "        end_simulation_time_us = atoll(argv[2]) * pow(10, 6);\n");
+    fprintf(execute_src_file, "        \n");
+    fprintf(execute_src_file, "    while(!end_sim_flag){\n");
     fprintf(execute_src_file, "        loop();\n");
+    fprintf(execute_src_file, "        if(getSimulationTimeus() >= end_simulation_time_us) \n");
+    fprintf(execute_src_file, "            break;\n");
     fprintf(execute_src_file, "    }\n");
+    fprintf(execute_src_file, "    cleanupSimulation();\n");
     fprintf(execute_src_file, "    for(int i = 0; i < pin_count; i++) {\n");
     fprintf(execute_src_file, "        PinState* state = &pin_states[i];\n");
     fprintf(execute_src_file, "        int pin = state->number;\n");
     fprintf(execute_src_file, "        printf(\"%%-3d : \", pin);\n");
+    fprintf(execute_src_file, "        long long total_duration = 0;\n");
     fprintf(execute_src_file, "        for(int j = 0; j <= state->state_count; j++) {\n");
     fprintf(execute_src_file, "            State* s = &state->log[j];\n");
-    fprintf(execute_src_file, "            int duration = s->duration;\n");
+    fprintf(execute_src_file, "            long long duration = s->duration;\n");
+    fprintf(execute_src_file, "            total_duration += duration;\n");
     fprintf(execute_src_file, "            double value = s->value;\n");
+    fprintf(execute_src_file, "            if(total_duration > end_simulation_time_us)\n");
+    fprintf(execute_src_file, "                duration -= (total_duration - end_simulation_time_us);\n");
     fprintf(execute_src_file, "            if(s->value == 1)\n");
-    fprintf(execute_src_file, "                for(int k=0; k<duration*scale; k++)\n");
+    fprintf(execute_src_file, "                for(long long k=0; k<(duration*scale - 0.5); k++)\n");
     fprintf(execute_src_file, "                    printf(\"*\");\n");
     fprintf(execute_src_file, "            else \n");
-    fprintf(execute_src_file, "                for(int k=0; k<duration*scale; k++)\n");
+    fprintf(execute_src_file, "                for(long long k=0; k<(duration*scale - 0.5); k++)\n");
     fprintf(execute_src_file, "                    printf(\" \");\n");
     fprintf(execute_src_file, "        }\n");
     fprintf(execute_src_file, "    printf(\"\\n\");\n");

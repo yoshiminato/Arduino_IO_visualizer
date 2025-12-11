@@ -2,7 +2,7 @@
 #define PIN_STATE_H
 
 #define square(x) ((x)*(x))
-#define MAX_STATE_NUM 40//square(100)
+#define MAX_STATE_NUM square(100)
 #define MAX_PIN_NUM 20
 
 /* arduinoの定数定義 */
@@ -23,7 +23,7 @@
 /* 状態の構造体 */
 typedef struct {
     float value;
-    int duration; //micro seconds
+    long long duration; //micro seconds
 } State;
 
 /* ピン状態の構造体 */
@@ -37,20 +37,17 @@ typedef struct {
 /* 状態初期化関数*/
 void init();
 
-/* シミュレーション時間を更新する関数 */
-void updateSimulationTime(int ms);
+/* delay関数 */
+void myDelay(int us);
 
 /* シミュレーション時間を取得する関数 */
-int getSimulationTime(void);
+long long getSimulationTimeus(void);
 
 /* パラメータファイルから入力ピンの状態を読み込む関数 */
 void loadInputPinsStateFromFile(const char* filename);
 
 /* ピンを登録する関数 */
 void registerPin(int pin, int mode);
-
-/* 全ピンのdurationを更新する関数 */
-void updateDurationForOutputPins(int ms);
 
 /* 指定ピンの状態を更新する関数 */
 void updatePinState(int pin, double value);
@@ -61,14 +58,23 @@ int getIndexOfPin(int pin);
 /* 指定ピンの最新の状態を取得する関数 */
 double getPinState(int pin);
 
+/* シミュレーション終了時に実行する処理をまとめて関数 */
+void cleanupSimulation(void);
+
 // ピン状態配列
 extern PinState pin_states[MAX_PIN_NUM];
 
 // 登録されたピンの数
 extern int pin_count;
 
+// シミュレーション終了フラグ
 extern int end_sim_flag;
 
-extern int current_time_ms;
+// シミュレーションの開始時刻（マイクロ秒単位）
+extern long long simulation_start_time_us; 
+
+// シミュレーションの終了時刻（実行時に指定）
+extern long long end_simulation_time_us;
+
 
 #endif /* PIN_STATE_H */

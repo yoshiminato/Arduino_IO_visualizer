@@ -2,32 +2,45 @@
 #include "pin_state.h"
 #include "error.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 double scale = 1.0 / 100000;
 void setup();
 void loop();
 
 int main(int argc, char *argv[]) {
+    end_simulation_time_us = 10 * pow(10, 6);
     init();
     setup();
     if (argc > 1)
         loadInputPinsStateFromFile(argv[1]);
-    while(!end_sim_flag) {
+    if (argc == 3)
+        end_simulation_time_us = atoll(argv[2]) * pow(10, 6);
+        
+    while(!end_sim_flag){
         loop();
+        if(getSimulationTimeus() >= end_simulation_time_us) 
+            break;
     }
+    cleanupSimulation();
     for(int i = 0; i < pin_count; i++) {
         PinState* state = &pin_states[i];
         int pin = state->number;
         printf("%-3d : ", pin);
+        long long total_duration = 0;
         for(int j = 0; j <= state->state_count; j++) {
             State* s = &state->log[j];
-            int duration = s->duration;
+            long long duration = s->duration;
+            total_duration += duration;
             double value = s->value;
+            if(total_duration > end_simulation_time_us)
+                duration -= (total_duration - end_simulation_time_us);
             if(s->value == 1)
-                for(int k=0; k<duration*scale; k++)
+                for(long long k=0; k<(duration*scale - 0.5); k++)
                     printf("*");
             else 
-                for(int k=0; k<duration*scale; k++)
+                for(long long k=0; k<(duration*scale - 0.5); k++)
                     printf(" ");
         }
     printf("\n");
