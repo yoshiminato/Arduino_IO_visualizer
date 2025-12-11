@@ -3,14 +3,11 @@
 #include "error.h"
 #include <stdio.h>
 
-double scale = 1.0 / 100;
+double scale = 1.0 / 100000;
 void setup();
 void loop();
 
 int main(int argc, char *argv[]) {
-    for(int i=0; i<argc; i++) {
-        printf("argv[%d]: %s\n", i, argv[i]);
-    }
     init();
     setup();
     if (argc > 1)
@@ -18,16 +15,14 @@ int main(int argc, char *argv[]) {
     while(!end_sim_flag) {
         loop();
     }
-
     for(int i = 0; i < pin_count; i++) {
         PinState* state = &pin_states[i];
         int pin = state->number;
-        printf("Pin %-3d : ", pin);
+        printf("%-3d : ", pin);
         for(int j = 0; j <= state->state_count; j++) {
             State* s = &state->log[j];
             int duration = s->duration;
             double value = s->value;
-            // printf("sc=%d duration=%d, value=%.1f \n", j, duration, value);
             if(s->value == 1)
                 for(int k=0; k<duration*scale; k++)
                     printf("*");

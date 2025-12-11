@@ -95,10 +95,7 @@ void loadInputPinsStateFromFile(const char* filename) {
                     int sc = ++state->state_count;
 
                     if (sc >= MAX_STATE_NUM) break;
-
-                    duration *= TIMESTEP; // TIMESTEP倍する
-
-                    
+                   
                     state->log[sc].value = value;
                     state->log[sc].duration = duration;
                     

@@ -34,16 +34,14 @@ float millis() {
 
 void delay(int ms) {
     // シミュレーション時間と出力ピン状態の更新を行う
-    updateSimulationTime(ms);
-    // for(int i=0; i<pin_count; i++) {
-    //     if(pin_states[i].mode == INPUT) continue;
-    //     int mode = pin_states[i].mode;
-    //     printf("Pin %d mode=%d\n", pin_states[i].number, mode);
-    // }
-    updateDurationForOutputPins(ms);
+    int dt = 1000 * ms; // マイクロ秒に変換
+    updateSimulationTime(dt);
+    updateDurationForOutputPins(dt);
 }
 
 void delayMicroseconds(int us) {
-    // 仮実装: 何もしない
+    // シミュレーション時間と出力ピン状態の更新を行う
+    updateSimulationTime(us);
+    updateDurationForOutputPins(us);
 }
 

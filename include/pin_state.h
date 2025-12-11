@@ -15,7 +15,6 @@
 #define AVAILABLE_PIN_NUMBER_MIN 1
 #define AVAILABLE_PIN_NUMBER_MAX 19
 
-#define TIMESTEP 100
 #define LINE_BUFFER_SIZE 2048
 #define PARAM_DIR "./params/"
 #define MAX_PATH_LENGTH 256
@@ -24,7 +23,7 @@
 /* 状態の構造体 */
 typedef struct {
     float value;
-    int duration; //ms
+    int duration; //micro seconds
 } State;
 
 /* ピン状態の構造体 */

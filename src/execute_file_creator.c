@@ -19,14 +19,12 @@ int main(void) {
     fprintf(execute_src_file, "#include <stdio.h>\n");
 
     fprintf(execute_src_file, "\n");
-    fprintf(execute_src_file, "double scale = 1.0 / 100;\n");
+    fprintf(execute_src_file, "double scale = 1.0 / 100000;\n");
     fprintf(execute_src_file, "void setup();\n");
     fprintf(execute_src_file, "void loop();\n");
     fprintf(execute_src_file, "\n");    
     fprintf(execute_src_file, "int main(int argc, char *argv[]) {\n");
-    // fprintf(execute_src_file, "    for(int i=0; i<argc; i++) {\n");
-    // fprintf(execute_src_file, "        printf(\"argv[%%d]: %%s\\n\", i, argv[i]);\n");
-    // fprintf(execute_src_file, "    }\n");
+    
     fprintf(execute_src_file, "    init();\n");
     fprintf(execute_src_file, "    setup();\n");
     fprintf(execute_src_file, "    if (argc > 1)\n");
