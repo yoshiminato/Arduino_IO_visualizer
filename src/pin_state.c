@@ -169,10 +169,6 @@ void updatePinState(int pin, double value) {
 
     PinState* state = &pin_states[idx];
 
-    // 出力ピンであることを確認
-    int mode = state->mode;
-    if (mode != OUTPUT) raiseInvalidFuncError(pin, mode);
-
     // 今の状態と同じなら状態更新しない
     double current_value = state->log[state->state_count].value;
     if(current_value == value) return;
@@ -221,16 +217,20 @@ double getPinState(int pin) {
     // 入力ピンの状態配列から現在の状態を取得
     int timeus_sum = 0;
     PinState* state = &pin_states[idx];
-    for(int sc=0; sc <= state->state_count; sc++) {
-        if(current_simulation_time_us > timeus_sum + state->log[sc].duration) {
-            timeus_sum += state->log[sc].duration;
-            continue;
-        }
-        return state->log[sc].value;
-    }
+    // for(int sc=0; sc <= state->state_count; sc++) {
+    //     if(current_simulation_time_us > timeus_sum + state->log[sc].duration) {
+    //         timeus_sum += state->log[sc].duration;
+    //         continue;
+    //     }
 
-    // 入力ピンの状態が定義されていない場合はLOWを返す
-    return LOW;
+
+    //     return state->log[sc].value;
+    // }
+
+    int sc = state->state_count;
+    float value = state->log[sc].value;
+    return value;   
+
 }
 
 void cleanupSimulation(void) {

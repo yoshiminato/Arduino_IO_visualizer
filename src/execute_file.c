@@ -1,16 +1,26 @@
 #include "override.h"
 #include "pin_state.h"
 #include "error.h"
+#include "draw.h"
+#include "queue.h"
+#include "input.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
 
+/* Thread identifiers.  The structure of the attribute type is not exposed on purpose.  */
+typedef unsigned long int pthread_t;
+
+pthread_t draw_thread;
+pthread_t publish_thread;
+pthread_t input_thread;
 double scale = 1.0 / 100000;
 void setup();
 void loop();
 
 int main(int argc, char *argv[]) {
-    end_simulation_time_us = 10 * pow(10, 6);
+    end_simulation_time_us = 10 * pow(10, 7);
     init();
     setup();
     if (argc > 1)
@@ -18,33 +28,21 @@ int main(int argc, char *argv[]) {
     if (argc == 3)
         end_simulation_time_us = atoll(argv[2]) * pow(10, 6);
         
+    InitQueue(dataBuffer);
+    pthread_create(&draw_thread, NULL, draw, NULL);
+    pthread_create(&publish_thread, NULL, publishThreadFunction, NULL);
+    pthread_create(&input_thread, NULL, makeInputThread, NULL);
     while(!end_sim_flag){
         loop();
-        if(getSimulationTimeus() >= end_simulation_time_us) 
+        if(getSimulationTimeus() >= end_simulation_time_us){ 
+            end_sim_flag = 1;
             break;
+        }
     }
     cleanupSimulation();
-    for(int i = 0; i < pin_count; i++) {
-        PinState* state = &pin_states[i];
-        int pin = state->number;
-        printf("%-3d : ", pin);
-        long long total_duration = 0;
-        for(int j = 0; j <= state->state_count; j++) {
-            State* s = &state->log[j];
-            long long duration = s->duration;
-            total_duration += duration;
-            double value = s->value;
-            if(total_duration > end_simulation_time_us)
-                duration -= (total_duration - end_simulation_time_us);
-            if(s->value == 1)
-                for(long long k=0; k<(duration*scale - 0.5); k++)
-                    printf("*");
-            else 
-                for(long long k=0; k<(duration*scale - 0.5); k++)
-                    printf(" ");
-        }
-    printf("\n");
-    }
+    pthread_join(draw_thread, NULL);
+    pthread_join(publish_thread, NULL);
+    pthread_join(input_thread, NULL);
     return 0;
 }
 

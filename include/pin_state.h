@@ -1,8 +1,7 @@
 #ifndef PIN_STATE_H
 #define PIN_STATE_H
 
-#define square(x) ((x)*(x))
-#define MAX_STATE_NUM square(100)
+#define MAX_STATE_NUM 10000
 #define MAX_PIN_NUM 20
 
 /* arduinoの定数定義 */
