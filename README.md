@@ -1,6 +1,6 @@
 # 概要
 Arduino IDE 環境のプログラム(inoファイル)を実行した際のIOの可視化を行う
-[!gif](https://github.com/yoshiminato/Arduino_IO_visualizer/blob/main/assets/videos/demo.gif)
+![gif](https://github.com/yoshiminato/Arduino_IO_visualizer/blob/main/assets/videos/demo.gif)
 
 # 環境構築
 
