@@ -1,3 +1,47 @@
+# 環境構築
+
+- リポジトリのクローン
+```bash 
+cd ~/
+git clone git@github.com:yoshiminato/Arduino_IO_visualizer.git
+```
+
+- 依存ライブラリの準備
+``` bash
+
+# クローン
+cd Arduino_IO_visualizer
+git clone git@github.com:raysan5/raylib.git
+# ビルド
+cd raylib/src
+make PLATFORM=PLATFORM_DESKTOP
+# インストール
+sudo make install
+mkdir --parents --verbose /usr/local/lib
+mkdir --parents --verbose /usr/local/include
+cp --update --verbose ../src/libraylib.a /usr/local/lib/libraylib.a
+```
+
+- 仮想環境の作成&構築
+```bash
+cd Arduino_IO_visualizer
+python3 -m venv .venv
+source .venv/bin/activate
+pip install python-docx
+```
+
+
+# クイックスタート
+```bash
+# ビルド
+cd Arduino_IO_visualizer
+make
+# 実行
+./bin/executor
+```
+
+
+
 # ファイル構造
 .
 ├── Makefile
