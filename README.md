@@ -16,7 +16,7 @@ git clone git@github.com:yoshiminato/Arduino_IO_visualizer.git
 ``` bash
 
 # クローン
-cd Arduino_IO_visualizer
+cd ~/Arduino_IO_visualizer
 git clone git@github.com:raysan5/raylib.git
 # ビルド
 cd raylib/src
@@ -30,7 +30,7 @@ cp --update --verbose ../src/libraylib.a /usr/local/lib/libraylib.a
 
 - 仮想環境の作成&構築
 ```bash
-cd Arduino_IO_visualizer
+cd ~/Arduino_IO_visualizer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install python-docx
@@ -41,7 +41,7 @@ pip install python-docx
 # クイックスタート
 ```bash
 # ビルド
-cd Arduino_IO_visualizer
+cd ~/Arduino_IO_visualizer
 make
 # 実行
 ./bin/executor
