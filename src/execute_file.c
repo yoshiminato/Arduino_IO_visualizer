@@ -28,7 +28,9 @@ int main(int argc, char *argv[]) {
     if (argc == 3)
         end_simulation_time_us = atoll(argv[2]) * pow(10, 6);
         
-    InitQueue(dataBuffer);
+    for(int i = 0; i < MAX_PIN_NUM; i++) {
+        InitQueue(&dataBuffer[i]);
+    }
     pthread_create(&draw_thread, NULL, draw, NULL);
     pthread_create(&publish_thread, NULL, publishThreadFunction, NULL);
     pthread_create(&input_thread, NULL, makeInputThread, NULL);
@@ -64,16 +66,15 @@ void loop() {
   static int dir = 1;
 
   int currentDir = (sw == LOW) ? -dir : dir;
+  led += currentDir;
+if (led > 13) led = 10;
+  if (led < 10) led = 13;
+
   digitalWrite(10, LOW);
   digitalWrite(11, LOW);
   digitalWrite(12, LOW);
   digitalWrite(13, LOW);
 
   digitalWrite(led, HIGH);
-  delay(500);
-
-  led += currentDir;
-
-  if (led > 13) led = 10;
-  if (led < 10) led = 13;
+ delay(500);
 }

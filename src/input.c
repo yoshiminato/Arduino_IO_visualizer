@@ -1,9 +1,11 @@
 #include "input.h"
 
+/* キー割り当て配列 */
 int input_buttons[] = {
     KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U, KEY_I, KEY_O, KEY_P,
 };
 
+/* 入力ピンの状態をキーボードから受け取るためのスレッド関数 */
 void* makeInputThread(void* arg) {
 
     while(end_sim_flag == 0) {

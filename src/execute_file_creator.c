@@ -4,14 +4,8 @@
 #include <stdlib.h>
 
 int main(void) {
-    const char *filename = "./data/test/test1.docx";
-    char cmd[256];
-    snprintf(cmd, sizeof(cmd), "python3 ./scripts/convert_docx2txt.py --input \"%s\"", filename);
-
-
-
-    FILE *fp = popen(cmd, "r");
-
+    
+    /* arduinoプログラムの実行に必要な関数群の定義と波形描画に必要なスレッドの作成 */
     FILE *execute_src_file = fopen("./src/execute_file.c", "w");
     fprintf(execute_src_file, "#include \"override.h\"\n");
     fprintf(execute_src_file, "#include \"pin_state.h\"\n");
@@ -50,7 +44,9 @@ int main(void) {
     fprintf(execute_src_file, "        end_simulation_time_us = atoll(argv[2]) * pow(10, 6);\n");
     fprintf(execute_src_file, "        \n");
 
-    fprintf(execute_src_file, "    InitQueue(dataBuffer);\n");
+    fprintf(execute_src_file, "    for(int i = 0; i < MAX_PIN_NUM; i++) {\n");
+    fprintf(execute_src_file, "        InitQueue(&dataBuffer[i]);\n");
+    fprintf(execute_src_file, "    }\n");
 
     fprintf(execute_src_file, "    pthread_create(&draw_thread, NULL, draw, NULL);\n");
     fprintf(execute_src_file, "    pthread_create(&publish_thread, NULL, publishThreadFunction, NULL);\n");
@@ -63,27 +59,6 @@ int main(void) {
     fprintf(execute_src_file, "        }\n");
     fprintf(execute_src_file, "    }\n");
     fprintf(execute_src_file, "    cleanupSimulation();\n");
-    // fprintf(execute_src_file, "    for(int i = 0; i < pin_count; i++) {\n");
-    // fprintf(execute_src_file, "        PinState* state = &pin_states[i];\n");
-    // fprintf(execute_src_file, "        int pin = state->number;\n");
-    // fprintf(execute_src_file, "        printf(\"%%-3d : \", pin);\n");
-    // fprintf(execute_src_file, "        long long total_duration = 0;\n");
-    // fprintf(execute_src_file, "        for(int j = 0; j <= state->state_count; j++) {\n");
-    // fprintf(execute_src_file, "            State* s = &state->log[j];\n");
-    // fprintf(execute_src_file, "            long long duration = s->duration;\n");
-    // fprintf(execute_src_file, "            total_duration += duration;\n");
-    // fprintf(execute_src_file, "            double value = s->value;\n");
-    // fprintf(execute_src_file, "            if(total_duration > end_simulation_time_us)\n");
-    // fprintf(execute_src_file, "                duration -= (total_duration - end_simulation_time_us);\n");
-    // fprintf(execute_src_file, "            if(s->value == 1)\n");
-    // fprintf(execute_src_file, "                for(long long k=0; k<(duration*scale - 0.5); k++)\n");
-    // fprintf(execute_src_file, "                    printf(\"*\");\n");
-    // fprintf(execute_src_file, "            else \n");
-    // fprintf(execute_src_file, "                for(long long k=0; k<(duration*scale - 0.5); k++)\n");
-    // fprintf(execute_src_file, "                    printf(\" \");\n");
-    // fprintf(execute_src_file, "        }\n");
-    // fprintf(execute_src_file, "    printf(\"\\n\");\n");
-    // fprintf(execute_src_file, "    }\n");
 
     fprintf(execute_src_file, "    pthread_join(draw_thread, NULL);\n");
     fprintf(execute_src_file, "    pthread_join(publish_thread, NULL);\n");
@@ -91,11 +66,21 @@ int main(void) {
     fprintf(execute_src_file, "    return 0;\n");
     fprintf(execute_src_file, "}\n\n");
 
+
+    /* 提出ファイルの読み込み */
+    const char *filename = "./data/test/test1.docx";                                              // 提出ファイルのパス
+    char cmd[256];                                                                                // docxをテキストに変換するコマンド
+    snprintf(cmd, sizeof(cmd), "python3 ./scripts/convert_docx2txt.py --input \"%s\"", filename); // コマンドの生成
+
+    /* docx → txt */
+    FILE *fp = popen(cmd, "r");
+
     if (!fp) {
         perror("popen");
         return 1;
     }
 
+    /* ユーザプログラムの追記 */
     char buf[1024];
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         fprintf(execute_src_file, "%s", buf);

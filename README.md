@@ -1,5 +1,4 @@
 # ファイル構造
-
 .
 ├── Makefile
 ├── README.md

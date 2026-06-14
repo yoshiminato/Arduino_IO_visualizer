@@ -6,12 +6,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-// グローバル変数の実体定義
-PinState pin_states[MAX_PIN_NUM];
-int end_sim_flag;
-int pin_count;
-long long simulation_start_time_us;
-long long end_simulation_time_us;
+/* グローバル変数の実体定義 */
+PinState pin_states[MAX_PIN_NUM];    // ピン状態配列
+int end_sim_flag;                    // シミュレーション終了フラグ
+int pin_count;                       // 登録されたピンの数                      
+long long simulation_start_time_us;  // シミュレーションの開始時刻
+long long end_simulation_time_us;    // シミュレーションの終了時刻（実行時に指定）
 
 
 /* 現在の時刻をマイクロ秒単位で取得する関数 */
@@ -21,6 +21,7 @@ long long getCurrentTimeus(void) {
     return (long long)tv.tv_sec * 1000000LL + tv.tv_usec;
 }
 
+/* シミュレーション時間（マイクロ秒単位）を取得する関数 */
 long long getSimulationTimeus(void) {
     long long current_time_us = getCurrentTimeus();
     return current_time_us - simulation_start_time_us;
@@ -50,16 +51,19 @@ void initPinStates(void) {
     }
 }
 
+/* 状態の初期化関数 */
 void init() {
     initPinStates();
     initTimeus();
     initFlag();
 }
 
+/* delay関数 */
 void myDelay(int us) {
     usleep(us);
 }
 
+/* パラメータファイルから入力ピンの状態を読み込む関数 */ //現状未使用
 void loadInputPinsStateFromFile(const char* filename) {
 
     // ファイルパスの構築
@@ -144,6 +148,8 @@ void loadInputPinsStateFromFile(const char* filename) {
     }
 }
 
+
+/* ピンを登録する関数 */
 void registerPin(int pin, int mode) {
 
     // 無効なピン番号、モード指定の場合のガード節
@@ -161,6 +167,7 @@ void registerPin(int pin, int mode) {
     return;
 }
 
+/* 指定ピンの状態を更新する関数 */
 void updatePinState(int pin, double value) {
     
     // 存在しないピンが指定された場合のガード節
@@ -205,6 +212,7 @@ int getIndexOfPin(int pin) {
     return -1; // ピンが見つからない場合
 }
 
+/* 指定ピンの最新の状態を取得する関数 */
 double getPinState(int pin) {
 
     // 存在しないピンが指定された場合のガード節
@@ -233,6 +241,7 @@ double getPinState(int pin) {
 
 }
 
+/* シミュレーション終了時に残った状態を補完する関数 */
 void cleanupSimulation(void) {
     for(int i=0; i < pin_count; i++) {
         PinState* state = &pin_states[i];

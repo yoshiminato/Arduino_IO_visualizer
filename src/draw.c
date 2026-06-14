@@ -7,10 +7,11 @@
 #include <unistd.h>
 
 
-#define MAX_SAMPLES 780
+#define MAX_SAMPLES 780 // 描画する波形のサンプル数
 
 WaveQueue dataBuffer[MAX_PIN_NUM]; // データを溜める配列
 
+// 描画関数
 void* draw(void* arg) {
 
     InitWindow(800, pin_count * BOX_HEIGHT, "waveform");
@@ -22,6 +23,8 @@ void* draw(void* arg) {
         ClearBackground(RAYWHITE);
 
         for (int p = 0; p < pin_count; p++) {
+
+            // ピン番号を描画
             DrawText(
                 TextFormat("Pin %d", pin_states[p].number), 
                 MARGIN_X, 
@@ -29,6 +32,7 @@ void* draw(void* arg) {
                 FONT_SIZE, 
                 DARKGRAY
             );
+            // 波形を描画
             for (int i = 0; i < MAX_SAMPLES - 1; i++) {
                 float data1 = WaveQueue_get(&dataBuffer[p], i);
                 float data2 = WaveQueue_get(&dataBuffer[p], i + 1);
@@ -47,6 +51,7 @@ void* draw(void* arg) {
     return 0;
 }
 
+// ピン状態を描画用バッファに配信する関数
 void publishPinStatesToDraw(void) {
     for (int p = 0; p < pin_count; p++) {
         PinState* state = &pin_states[p];
@@ -56,6 +61,7 @@ void publishPinStatesToDraw(void) {
     }
 }
 
+// ピン状態を描画用バッファに配信するスレッド関数
 void* publishThreadFunction(void* arg) {
     while (!end_sim_flag) {
         publishPinStatesToDraw();

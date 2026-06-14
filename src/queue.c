@@ -4,7 +4,7 @@
 void InitQueue(WaveQueue *q) {
     q->head = 0;
     q->tail = 0;
-    q->count = 0;
+    q->count = QUEUE_SIZE;
     pthread_mutex_init(&q->mutex, NULL);
 }
 
